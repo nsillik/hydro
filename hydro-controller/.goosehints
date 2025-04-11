@@ -1,0 +1,36 @@
+# Goose Hints for Hydro Controller Project
+
+## Project Context
+This is a hydroponic controller project that manages and monitors hydroponic growing systems. It is written in Rust targeting the ESP32-C6 microcontroller.
+
+## Technical Details
+- This is a no_std embedded project (bare metal)
+- Uses Embassy async runtime for task management
+- Target architecture: RISC-V (riscv32imac-unknown-none-elf)
+- Flash/deploy command: `espflash flash --monitor --chip esp32c6`
+- Default log level is "info" (configured in .cargo/config.toml)
+
+## Key Features & Capabilities
+- WiFi connectivity (esp-wifi)
+- Bluetooth Low Energy support (bleps)
+- Network stack with TCP/IP (embassy-net + smoltcp)
+- Custom heap allocation (72KB allocated)
+- Hardware GPIO control
+- Async task management
+
+## Project Structure
+- Main application logic in src/bin/main.rs
+- Library code in src/lib.rs
+- Core functionality implemented as async tasks
+- Uses Embassy executor for task scheduling
+
+## Common Operations
+- WiFi and network stack initialization included
+- Logging available via esp-println
+- Error handling with esp-backtrace
+
+## Development Notes
+- Debug builds use size optimization (opt-level = "s")
+- Release builds use full optimization with LTO
+- Project includes both WiFi and BLE capabilities
+- Embassy tasks should be spawned for concurrent operations

@@ -5,9 +5,11 @@ use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_hal::clock::CpuClock;
+use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::timer::systimer::SystemTimer;
 use esp_hal::timer::timg::TimerGroup;
 use log::info;
+use smoltcp::iface::Config;
 
 extern crate alloc;
 
@@ -37,11 +39,14 @@ async fn main(spawner: Spawner) {
 
     // TODO: Spawn some tasks
     let _ = spawner;
-
+    let mut led = Output::new(peripherals.GPIO15, Level::Low, OutputConfig::default());
     loop {
         info!("Hello world!");
-        Timer::after(Duration::from_secs(1)).await;
+        led.toggle();
+        Timer::after(Duration::from_secs(15)).await;
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.0.0-beta.0/examples/src/bin
 }
+
+// TODO(goose): Create a new embassy task function to run every 10 seconds that will check the water height
