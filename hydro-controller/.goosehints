@@ -34,3 +34,8 @@ This is a hydroponic controller project that manages and monitors hydroponic gro
 - Release builds use full optimization with LTO
 - Project includes both WiFi and BLE capabilities
 - Embassy tasks should be spawned for concurrent operations
+
+## Building, Running, and Testing
+- To build the project simply `cargo build`
+- When building please only attempt to fix one time. After that ask me what to do.
+- Please don't run the project yourself either. If you need it run to verify behavior please ask me to do so.
