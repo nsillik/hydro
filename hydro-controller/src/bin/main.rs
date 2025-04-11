@@ -5,11 +5,10 @@ use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_hal::clock::CpuClock;
-use esp_hal::gpio::{Level, Output, OutputConfig};
+use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::timer::systimer::SystemTimer;
 use esp_hal::timer::timg::TimerGroup;
 use log::info;
-use smoltcp::iface::Config;
 
 extern crate alloc;
 
@@ -37,16 +36,45 @@ async fn main(spawner: Spawner) {
     )
     .unwrap();
 
-    // TODO: Spawn some tasks
-    let _ = spawner;
+    // Initialize GPIO pins
     let mut led = Output::new(peripherals.GPIO15, Level::Low, OutputConfig::default());
+
+    // Water level sensor pin (pulled down, will read high when water detected)
+    let high_water_sensor = Input::new(
+        peripherals.GPIO4,
+        InputConfig::default().with_pull(Pull::Down),
+    );
+
+    // Pump control pin (default to off)
+    let drain_pump = Output::new(peripherals.GPIO6, Level::Low, OutputConfig::default());
+
+    // Spawn the water level monitoring task
+    spawner
+        .spawn(check_container_level(high_water_sensor, drain_pump))
+        .unwrap();
+
+    // LED heartbeat task
     loop {
-        info!("Hello world!");
+        info!("Heartbeat");
         led.toggle();
         Timer::after(Duration::from_secs(15)).await;
     }
-
-    // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.0.0-beta.0/examples/src/bin
 }
 
-// TODO(goose): Create a new embassy task function to run every 10 seconds that will check the water height
+#[embassy_executor::task]
+async fn check_container_level(high_water_sensor: Input<'static>, mut drain_pump: Output<'static>) {
+    loop {
+        let high_water = high_water_sensor.is_high();
+
+        if high_water && drain_pump.is_set_low() {
+            info!("High water level detected - activating drain pump");
+            drain_pump.set_high();
+        } else if !high_water && drain_pump.is_set_high() {
+            info!("Water level normalized - deactivating drain pump");
+            drain_pump.set_low();
+        }
+
+        // Check every 10 seconds
+        Timer::after(Duration::from_secs(10)).await;
+    }
+}
