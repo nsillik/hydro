@@ -37,7 +37,6 @@ async fn main(spawner: Spawner) {
     .unwrap();
 
     // Initialize GPIO pins
-    let mut led = Output::new(peripherals.GPIO15, Level::Low, OutputConfig::default());
 
     // Water level sensor pin (pulled down, will read high when water detected)
     let high_water_sensor = Input::new(
@@ -53,11 +52,24 @@ async fn main(spawner: Spawner) {
         .spawn(check_container_level(high_water_sensor, drain_pump))
         .unwrap();
 
-    // LED heartbeat task
+    let heartbeat_led = Output::new(peripherals.GPIO15, Level::Low, OutputConfig::default());
+    spawner
+        .spawn(heartbeat(heartbeat_led))
+        .unwrap();
+
+    // Wait indefinitely - tasks are running independently
+    Timer::after(Duration::MAX).await;
+}
+
+#[embassy_executor::task]
+async fn heartbeat(mut led: Output<'static>) {
     loop {
-        info!("Heartbeat");
-        led.toggle();
-        Timer::after(Duration::from_secs(15)).await;
+        info!("Heartbeat LED on");
+        led.set_high();
+        Timer::after(Duration::from_secs(1)).await;
+        info!("Heartbeat LED off");
+        led.set_low();
+        Timer::after(Duration::from_secs(5)).await;
     }
 }
 
